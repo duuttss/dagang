@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
 export default function MainLayout() {
@@ -28,8 +28,16 @@ export default function MainLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white text-center p-4">
+      <footer className="bg-gray-800 text-white text-center p-4 flex flex-col items-center gap-2">
         <p>© 2025 E-Commerce Simple App | Version 1.0</p>
+        
+        {/* Link ke Halaman Admin */}
+        <Link 
+          to="/admin/login" 
+          className="text-sm text-gray-400 hover:text-white transition duration-200 underline"
+        >
+          Login Admin
+        </Link>
       </footer>
     </div>
   );

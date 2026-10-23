@@ -1,23 +1,50 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useProducts } from "../../context/ProductContext";
+import api from "../../services/api"; // Import jembatan API kita
 
 export default function AdminDashboard() {
-  const { products, deleteProduct } = useProducts();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = (id, name) => {
-    if (window.confirm(`Yakin ingin menghapus produk "${name}"?`)) {
-      deleteProduct(id);
+  // Fungsi untuk mengambil data dari Laravel
+  const fetchProducts = async () => {
+    try {
+      const response = await api.get("/products");
+      setProducts(response.data.data); // Laravel membungkus data di dalam "data"
+      setLoading(false);
+    } catch (error) {
+      console.error("Gagal mengambil data:", error);
+      setLoading(false);
     }
   };
 
+  // Jalankan saat halaman pertama kali dibuka
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // Fungsi untuk menghapus produk
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Yakin ingin menghapus produk "${name}"?`)) {
+      try {
+        await api.delete(`/products/${id}`);
+        alert("Produk berhasil dihapus!");
+        fetchProducts(); // Refresh data setelah dihapus
+      } catch (error) {
+        alert("Gagal menghapus produk.");
+      }
+    }
+  };
+
+  if (loading) return <div className="p-6">Memuat data dari server...</div>;
+
   return (
     <div>
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Manajemen Produk</h1>
           <p className="text-sm text-gray-500">
-            Total: {products.length} produk
+            Total: {products.length} produk (Dari Database Laravel)
           </p>
         </div>
         <Link
@@ -28,7 +55,6 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      {/* Tabel Produk */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-100">
@@ -44,7 +70,7 @@ export default function AdminDashboard() {
             {products.length === 0 ? (
               <tr>
                 <td colSpan="5" className="text-center p-8 text-gray-500">
-                  Belum ada produk. Klik "Tambah Produk" untuk memulai.
+                  Belum ada produk di database.
                 </td>
               </tr>
             ) : (
@@ -53,10 +79,15 @@ export default function AdminDashboard() {
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={product.image}
+                        src={product.img_url || "https://placehold.co/100x100/e2e8f0/475569?text=No+Image"}
                         alt={product.name}
                         className="w-12 h-12 object-cover rounded"
-                      />
+                        // Tambahkan baris di bawah ini:
+                        onError={(e) => {
+                        e.target.onerror = null; // Mencegah looping tanpa henti
+                        e.target.src = "https://placehold.co/100x100/e2e8f0/475569?text=No+Image";
+                          }}
+                       />
                       <div>
                         <p className="font-semibold">{product.name}</p>
                         <p className="text-xs text-gray-500 line-clamp-1">
@@ -65,20 +96,12 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </td>
-                  <td className="p-4 text-sm">{product.category}</td>
+                  <td className="p-4 text-sm">{product.category?.name}</td>
                   <td className="p-4 text-right font-semibold text-blue-600">
                     Rp {product.price.toLocaleString("id-ID")}
                   </td>
                   <td className="p-4 text-center">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-semibold ${
-                        product.stock > 10
-                          ? "bg-green-100 text-green-700"
-                          : product.stock > 0
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
+                    <span className="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
                       {product.stock}
                     </span>
                   </td>
